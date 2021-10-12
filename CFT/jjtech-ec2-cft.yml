@@ -1,0 +1,72 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  InstanceType:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "JJTech-Test-EC2InstanceType"
+    Description: Enter an instance type for your EC2 instance.
+  InstanceRoleName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "JJTech-Test-EC2InstanceRoleName"
+  SSHKeyName:
+    Description: 'Name of the ec2 key pair'
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: 'JJTech-Test-EC2SSHKeyName'
+  InstanceAMI:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "JJTech-Test-EC2InstanceAMI"
+  InstanceSecurityGroup:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "JJTech-Test-EC2InstanceSecurityGroup"
+  InstanceSubnetID:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "JJTech-Test-EC2InstanceSubnetID"
+  InstanceName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "JJTech-Test-EC2InstanceName"
+
+Resources:
+  EC2InstanceA:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType:
+        Ref: InstanceType
+      IamInstanceProfile:
+        Ref: InstanceRoleName
+      KeyName:
+        Ref: SSHKeyName
+      ImageId:
+        Ref: InstanceAMI
+      SecurityGroupIds:
+        - Ref: InstanceSecurityGroup
+      SubnetId:
+        Ref: InstanceSubnetID
+      UserData:
+        Fn::Base64:
+          !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install httpd -y
+          service httpd start
+          service httpd enable
+            Type: AWS::ECS::Service
+            Properties:
+              Cluster: String     # optional
+              DeploymentConfiguration: DeploymentConfiguration     # optional
+              DesiredCount: Integer     # optional
+              LoadBalancers:                # optional, list of LoadBalancer
+                - LoadBalancer
+              PlacementConstraints:                # optional, list of PlacementConstraint
+                - PlacementConstraint
+              PlacementStrategies:                # optional, list of PlacementStrategy
+                - PlacementStrategy
+              Role: String     # optional
+              ServiceName: String     # optional
+              TaskDefinition: String     # required
+          chkconfig httpd on
+          echo "<html><body><h1>Hello AZ1</h1></body></html>" > /var/www/html/index.html
+      Monitoring: 'false'
+      Tenancy: default
+      Tags:
+        - Key: Name
+          Value: !Ref InstanceName
