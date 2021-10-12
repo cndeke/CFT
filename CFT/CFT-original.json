@@ -7,43 +7,38 @@
     "Parameters": {
       "NdVPCcidr": {
           "Description": "provide cidr for VPC",
-          "Type": "AWS::SSM::Parameter::Value<String>",
-          "Default":"NdVPCcidr"
+          "Type": "String"
       },
       "NdPublicSubnetAz": {
           "Description": "Select Public Subnet AZ",
-          "Type": "AWS::SSM::Parameter::Value<String>",
-          "Default":"NdPublicSubnetAz"
+          "Type": "AWS::EC2::AvailabilityZone::Name"
       },
       "NdPrivateSubnetAz": {
           "Description": "Select Private Subnet AZ",
-          "Type": "AWS::SSM::Parameter::Value<String>",
-          "Default": "NdPrivateSubnetAz"
+          "Type": "AWS::EC2::AvailabilityZone::Name",
+          "Default": "-"
       },
       "NdPublicSubnetcidr": {
           "Description": "provide cidr for public subnet",
-          "Type": "AWS::SSM::Parameter::Value<String>",
-          "Default":"NdPublicSubnetcidr"
+          "Type": "String"
       },
       "NdPrivateSubnetcidr": {
           "Description": "provide cidr for private subnet",
-          "Type": "AWS::SSM::Parameter::Value<String>",
-          "Default":"NdPrivateSubnetcidr"
+          "Type": "String"
       },
       "KeyName": {
           "Description": "Key name for WebServer",
-          "Type": "AWS::SSM::Parameter::Value<String>",
-          "Default":"KeyName"
+          "Type": "AWS::EC2::KeyPair::KeyName"
       },
       "ImageId": {
           "Description": "WebServer ImageId",
-          "Type": "AWS::SSM::Parameter::Value<String>",
-          "Default":"ImageId"
+          "Type": "String",
+          "Default": "ami-0b0af3577fe5e3532"
       },
       "InstanceType": {
           "Description": "select instance type",
-          "Type": "AWS::SSM::Parameter::Value<String>",
-          "Default":"InstanceType"
+          "Type": "String",
+          "Default": "t2.micro"
       }
 
     },
