@@ -1,0 +1,138 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: ''
+Metadata: {}
+Parameters:
+  RobVPC1cidr:
+    Description: provide cidr for VPC
+    Type: String
+  RobPrivSubnetAZ:
+    Description: select AZ
+    Type: 'AWS::EC2::AvailabilityZone::Name'
+  RobPrivSubnetcidr:
+    Description: provide cidr for subnet
+    Type: String
+  RobPubSubnetAZ:
+    Description: select AZ
+    Type: 'AWS::EC2::AvailabilityZone::Name'
+  RobPubSubnetcidr:
+    Description: provide cidr for subnet
+    Type: String
+  InstanceType:
+    Description: selct instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.nano
+      - t2.micro
+      - t2.medium
+  RobEC2Keypair:
+    Description: select key
+    Type: 'AWS::EC2::KeyPair::KeyName'
+Mappings:
+  mapAMI:
+    us-east-1:
+      AMI: ami-0ab4d1e9cf9a1215a
+    us-west-1:
+      AMI: ami-02f24ad9a1d24a799
+Conditions: {}
+Resources:
+  RobVPC1:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: !Ref RobVPC1cidr
+      Tags:
+        - Key: Name
+          Value: RobVPC1
+  RobPrivSubnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      AvailabilityZone: !Ref RobPrivSubnetAZ
+      VpcId: !Ref RobVPC1
+      CidrBlock: !Ref RobPrivSubnetcidr
+      Tags:
+        - Key: Name
+          Value: RobPrivSubnet
+  RobPubSubnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      AvailabilityZone: !Ref RobPubSubnetAZ
+      VpcId: !Ref RobVPC1
+      CidrBlock: !Ref RobPubSubnetcidr
+      MapPublicIpOnLaunch: 'True'
+      Tags:
+        - Key: Name
+          Value: RobPubSubnet
+  RobIGW:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+        - Key: Name
+          Value: RobIGW
+  RobAttachGateway:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref RobVPC1
+      InternetGatewayId: !Ref RobIGW
+  RobPriSubRT:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref RobVPC1
+      Tags:
+        - Key: Name
+          Value: RobPriSubRT
+  RobPubSubRT:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref RobVPC1
+      Tags:
+        - Key: Name
+          Value: RobPubSubRT
+  RobPriRTAss:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref RobPrivSubnet
+      RouteTableId: !Ref RobPriSubRT
+  RobPubRTAss:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref RobPubSubnet
+      RouteTableId: !Ref RobPubSubRT
+  RobSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: RobEC2-SG
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+      VpcId: !Ref RobVPC1
+      Tags:
+        - Key: Name
+          Value: RobSG
+  RobEC2:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      KeyName: !Ref RobEC2Keypair
+      ImageId: !FindInMap
+        - mapAMI
+        - !Ref 'AWS::Region'
+        - AMI
+      InstanceType: !Ref InstanceType
+      Monitoring: 'false'
+      SecurityGroupIds:
+        - !Ref RobSG
+      SubnetId: !Ref RobPubSubnet
+      Tags:
+        - Key: Name
+          Value: RobEC2
+      UserData: !Base64
+        'Fn::Join':
+          - ''
+          - - '#!/bin/bash -ex'
+            - '-'
+Outputs: {}

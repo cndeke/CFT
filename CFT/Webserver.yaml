@@ -1,0 +1,47 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  This template creates a webserver
+
+Parameters:
+  NetworkStack:
+    Type: String
+    Description: The stack from to import values.
+    Default: 'ChiStack'
+  ImageId:
+    Type: String
+    Description: Provide image to run instance.
+    Default: 'ami-0c2b8ca1dad447f8a'
+  KeyName:
+   Type: String
+   Description: Select key pair for SSH access
+   Default: 'Windows-Nova'
+  SecurityGroupId:
+    Type: String
+    Description: Webserver SG
+    Default: ''
+  SubnetId:
+    Type: String
+    Description: Webserver Subnet
+    Default: ''
+Resources:
+  WebserverEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: "t2.micro"
+      KeyName: !Ref KeyName
+      Monitoring: 'false'
+      SecurityGroupIds:
+        - Ref: SecurityGroupId
+      SubnetId:
+        Ref: SubnetId
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-DemoWebserver
+
+  S3Bucket:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/chibuzor-cloudformation-templates/S3Bucket.yaml

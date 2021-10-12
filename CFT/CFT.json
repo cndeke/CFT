@@ -1,0 +1,184 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Network Template with WebServer",
+    "Metadata": {
+
+    },
+    "Parameters": {
+      "NdVPCcidr": {
+          "Description": "provide cidr for VPC",
+          "Type": "String"
+      },
+      "NdPublicSubnetAz": {
+          "Description": "Select Public Subnet AZ",
+          "Type": "AWS::EC2::AvailabilityZone::Name"
+      },
+      "NdPrivateSubnetAz": {
+          "Description": "Select Private Subnet AZ",
+          "Type": "AWS::EC2::AvailabilityZone::Name",
+          "Default": "-"
+      },
+      "NdPublicSubnetcidr": {
+          "Description": "provide cidr for public subnet",
+          "Type": "String"
+      },
+      "NdPrivateSubnetcidr": {
+          "Description": "provide cidr for private subnet",
+          "Type": "String"
+      },
+      "KeyName": {
+          "Description": "Key name for WebServer",
+          "Type": "AWS::EC2::KeyPair::KeyName"
+      },
+      "ImageId": {
+          "Description": "WebServer ImageId",
+          "Type": "String",
+          "Default": "ami-0b0af3577fe5e3532"
+      },
+      "InstanceType": {
+          "Description": "select instance type",
+          "Type": "String",
+          "Default": "t2.micro"
+      }
+
+    },
+    "Mappings": {
+
+    },
+    "Conditions": {
+
+    },
+    "Resources": {
+      "NdVPC": {
+        "Type": "AWS::EC2::VPC",
+        "Properties": {
+          "CidrBlock": { "Ref": "NdVPCcidr" },
+          "EnableDnsSupport" : "true",
+          "EnableDnsHostnames" : "true",
+          "Tags": [{ "Key": "Name", "Value":  "NdVPC" }]
+        }
+      },
+      "NdPublicSubnet": {
+        "Type": "AWS::EC2::Subnet",
+        "Properties": {
+          "AvailabilityZone": { "Ref": "NdPublicSubnetAz" },
+          "MapPublicIpOnLaunch" : "true",
+          "VpcId": { "Ref": "NdVPC" },
+          "CidrBlock": { "Ref": "NdPublicSubnetcidr" },
+          "Tags": [{ "Key": "Name", "Value":  "NdPublicSubnet" }]
+        }
+      },
+      "NdPrivateSubnet": {
+        "Type": "AWS::EC2::Subnet",
+        "Properties": {
+          "AvailabilityZone": { "Ref": "NdPrivateSubnetAz" },
+          "MapPublicIpOnLaunch" : "true",
+          "VpcId": { "Ref": "NdVPC" },
+          "CidrBlock": { "Ref": "NdPrivateSubnetcidr" },
+          "Tags": [{ "Key": "Name", "Value":  "NdPrivateSubnet" }]
+        }
+      },
+      "Ndigw": {
+        "Type": "AWS::EC2::InternetGateway",
+        "Properties": {
+          "Tags": [{ "Key": "Name", "Value":  "Ndigw" }]
+        }
+      },
+      "AttachGateway": {
+        "Type": "AWS::EC2::VPCGatewayAttachment",
+        "Properties": {
+          "VpcId": { "Ref": "NdVPC"},
+          "InternetGatewayId": { "Ref": "Ndigw" }
+        }
+      },
+      "NdPublicSubnetRt": {
+        "Type": "AWS::EC2::RouteTable",
+        "Properties": {
+          "VpcId": { "Ref": "NdVPC" },
+          "Tags": [{ "Key": "Name", "Value":  "NdPublicSubnetRt" }]
+        }
+      },
+      "NdPrivateSubnetRt": {
+        "Type": "AWS::EC2::RouteTable",
+        "Properties": {
+          "VpcId": { "Ref": "NdVPC" },
+          "Tags": [{ "Key": "Name", "Value":  "NdPrivateSubnetRt" }]
+        }
+      },
+      "Ndigwroute": {
+        "Type": "AWS::EC2::Route",
+        "Properties": {
+          "RouteTableId": { "Ref": "NdPublicSubnetRt" },
+          "DestinationCidrBlock": "0.0.0.0/0",
+          "GatewayId": { "Ref": "Ndigw" }
+        }
+      },
+      "NdPublicSubnetRtAss": {
+        "Type": "AWS::EC2::SubnetRouteTableAssociation",
+        "Properties": {
+          "SubnetId": { "Ref": "NdPublicSubnet" },
+          "RouteTableId": { "Ref": "NdPublicSubnetRt" }
+        }
+      },
+      "NdPrivateSubnetRtAss": {
+        "Type": "AWS::EC2::SubnetRouteTableAssociation",
+        "Properties": {
+          "SubnetId": { "Ref": "NdPrivateSubnet" },
+          "RouteTableId": { "Ref": "NdPrivateSubnetRt" }
+        }
+      },
+      "NdSG" : {
+        "Type" : "AWS::EC2::SecurityGroup",
+        "Properties" : {
+          "GroupDescription" : "SG for Instances",
+          "SecurityGroupIngress" : [ {
+         "IpProtocol" : "tcp",
+         "FromPort" : 80,
+         "ToPort" : 80,
+         "CidrIp" : "0.0.0.0/0"
+      },
+      {
+         "IpProtocol" : "tcp",
+         "FromPort" : 22,
+         "ToPort" : 22,
+         "CidrIp" : "0.0.0.0/0"
+      }
+          ],
+          "VpcId" : { "Ref": "NdVPC" },
+          "Tags" :  [{ "Key": "Name", "Value":  "NdSG" }]
+        }
+      },
+      "NdWebServer": {
+          "Type": "AWS::EC2::Instance",
+          "Properties": {
+              "KeyName": { "Ref": "KeyName" },
+              "ImageId": { "Ref": "ImageId" },
+              "InstanceType": { "Ref": "InstanceType" },
+              "Monitoring": "false",
+              "SubnetId": { "Ref": "NdPublicSubnet" },
+              "SecurityGroupIds" : [{ "Ref": "NdSG" }],
+              "Tags": [
+                  {
+                      "Key": "Name",
+                      "Value": "NdWebServer"
+                  }
+              ],
+              "UserData": {
+                  "Fn::Base64": {
+                      "Fn::Join": [
+                          "",
+                          [
+                              "#!/bin/bash -ex",
+                              "-"
+                          ]
+                      ]
+                  }
+              }
+      }
+              }
+
+    },
+    "Outputs": {
+
+    }
+}

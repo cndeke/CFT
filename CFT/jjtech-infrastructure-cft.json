@@ -1,0 +1,66 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "this template provisions network resources for jjtech",
+    "Metadata": {
+
+    },
+    "Parameters": {
+      "JJTechVPCcidrPARA": {
+          "Description": "Please provide a cidr for JJTechVPC",
+          "Type": "String"
+      },
+      "JJTechVPCprivSNazPARA": {
+          "Description": "Please provide az for private subnet",
+          "Type": "AWS::EC2::AvailabilityZone::Name"
+      },
+      "JJTechVPCprivSNcidrPARA": {
+          "Description": "please provide cidr for JJTechVPCprivSN",
+          "Type": "String"
+      },
+      "JJTechVPCpubSNazPARA": {
+          "Description": "please provide az for JJTechVPCpubSN",
+          "Type": "AWS::EC2::AvailabilityZone::Name"
+      },
+      "JJTechVPCpubSNcidrPARA": {
+          "Description": "please provide a cidr for JJTechVPCpubSN ",
+          "Type": "String"
+      }
+
+    },
+    "Mappings": {
+
+    },
+    "Conditions": {
+
+    },
+    "Resources": {
+      "JJTechVPC": {
+        "Type": "AWS::EC2::VPC",
+        "Properties": {
+          "CidrBlock": { "Ref": "JJTechVPCcidrPARA" },
+          "Tags": [{ "Key": "Name", "Value":  "JJTechVPC" }]
+        }
+      },
+      "JJTechVPCprivSN": {
+        "Type": "AWS::EC2::Subnet",
+        "Properties": {
+          "AvailabilityZone": { "Ref": "JJTechVPCprivSNazPARA" },
+          "VpcId": { "Ref": "JJTechVPC" },
+          "CidrBlock": { "Ref": "JJTechVPCprivSNcidrPARA" },
+          "Tags": [{ "Key": "Name", "Value":  "JJTechVPCprivSN" }]
+        }
+      },
+      "JJTechVPCpubSN": {
+        "Type": "AWS::EC2::Subnet",
+        "Properties": {
+          "AvailabilityZone": { "Ref": "JJTechVPCpubSNazPARA" },
+          "VpcId": { "Ref": "JJTechVPC" },
+          "CidrBlock": { "Ref": "JJTechVPCpubSNcidrPARA" },
+          "Tags": [{ "Key": "Name", "Value":  "JJTechVPCpubSN" }]
+        }
+      }
+    },
+    "Outputs": {
+
+    }
+}

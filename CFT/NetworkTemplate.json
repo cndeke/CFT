@@ -1,0 +1,169 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "This template creates a VPC, two Subnets, Route Tables & Security Group etc",
+    "Metadata": {
+
+    },
+    "Parameters": {
+      "ChiVPC1cidr": {
+          "Description": "provide cidr for VPC",
+          "Type": "String"
+      },
+      "ChiPrivSubnetAZ": {
+          "Description": "select AZ",
+          "Type": "AWS::EC2::AvailabilityZone::Name"
+      },
+      "ChiPrivSubnetcidr": {
+          "Description": "provide cidr for subnet",
+          "Type": "String"
+      },
+      "ChiPubSubnetAZ": {
+          "Description": "select AZ",
+          "Type": "AWS::EC2::AvailabilityZone::Name"
+      },
+      "ChiPubSubnetcidr": {
+          "Description": "provide cidr for subnet",
+          "Type": "String"
+      }
+    },
+    "Mappings": {
+    },
+    "Conditions": {
+
+    },
+    "Resources": {
+      "ChiVPC1": {
+        "Type": "AWS::EC2::VPC",
+        "Properties": {
+          "CidrBlock": { "Ref": "ChiVPC1cidr" },
+          "EnableDnsHostnames" : "true",
+          "EnableDnsSupport" : "true",
+          "Tags": [{ "Key": "Name", "Value":  "ChiVPC1" }]
+        }
+      },
+      "ChiPrivSubnet": {
+        "Type": "AWS::EC2::Subnet",
+        "Properties": {
+          "AvailabilityZone": { "Ref": "ChiPrivSubnetAZ" },
+          "VpcId": { "Ref": "ChiVPC1" },
+          "CidrBlock": { "Ref": "ChiPrivSubnetcidr" },
+          "Tags": [{ "Key": "Name", "Value":  "ChiPrivSubnet" }]
+        }
+      },
+      "ChiPubSubnet": {
+        "Type": "AWS::EC2::Subnet",
+        "Properties": {
+          "AvailabilityZone": { "Ref": "ChiPubSubnetAZ" },
+          "VpcId": { "Ref": "ChiVPC1" },
+          "CidrBlock": { "Ref": "ChiPubSubnetcidr" },
+          "MapPublicIpOnLaunch" : "True",
+          "Tags": [{ "Key": "Name", "Value":  "ChiPubSubnet" }]
+        }
+    },
+    "ChiIGW": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [{ "Key": "Name", "Value":  "ChiIGW" }]
+      }
+    },
+    "ChiIGWroute": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": { "Ref": "ChiPubSubRT" },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": { "Ref": "ChiIGW" }
+      }
+    },
+    "ChiAttachGateway": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": { "Ref": "ChiVPC1" },
+        "InternetGatewayId": { "Ref": "ChiIGW" }
+      }
+    },
+    "ChiPriSubRT": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": { "Ref": "ChiVPC1" },
+        "Tags": [{ "Key": "Name", "Value":  "ChiPriSubRT" }]
+      }
+    },
+    "ChiPubSubRT": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": { "Ref": "ChiVPC1" },
+        "Tags": [{ "Key": "Name", "Value":  "ChiPubSubRT" }]
+      }
+    },
+    "ChiPriRTAss": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": { "Ref": "ChiPrivSubnet" },
+        "RouteTableId": { "Ref": "ChiPriSubRT" }
+      }
+    },
+    "ChiPubRTAss": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": { "Ref": "ChiPubSubnet" },
+        "RouteTableId": { "Ref": "ChiPubSubRT" }
+      }
+    },
+    "ChiSG" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "ChiEC2-SG",
+        "SecurityGroupIngress" : [
+          { "IpProtocol" : "tcp",
+            "FromPort" : "80",
+            "ToPort" : "80",
+            "CidrIp" : "0.0.0.0/0" },
+
+            { "IpProtocol" : "tcp",
+              "FromPort" : "22",
+              "ToPort" : "22",
+              "CidrIp" : "0.0.0.0/0" }
+          ],
+        "VpcId" : { "Ref": "ChiVPC1" },
+        "Tags" : [{ "Key": "Name", "Value":  "ChiSG" }]
+      }
+    },
+    "WebServer": {
+      "Type": "AWS::CloudFormation::Stack",
+      "Properties": {
+        "TemplateURL":"https://s3.amazonaws.com/chibuzor-cloudformation-templates/Assign.json",
+        "Parameters": {
+          "ImageId":"ami-0c2b8ca1dad447f8a",
+          "SubnetId":{ "Ref": "ChiPubSubnet" },
+          "SecurityGroupId":{ "Ref": "ChiSG" },
+          "ChiEC2Keypair":"Windows-Nova"
+        }
+      }
+    }
+
+},
+    "Outputs": {
+      "VPCId":{
+        "Description": "VPC ID",
+        "Value":{ "Ref": "ChiVPC1" },
+        "Export":{ "Name" : {"Fn::Sub": "${AWS::StackName}-VPCId" }}
+      },
+      "ChiSG": {
+        "Description":"This will output security group",
+        "Value": { "Fn::GetAtt" : [ "ChiSG", "GroupId" ]},
+        "Export":{
+          "Name":{"Fn::Sub": "${AWS::StackName}-SecurityGroupId" }
+        }
+      },
+      "ChiPubSubnet" : {
+        "Description" : "The subnet ID to use for public web servers",
+        "Value" :  { "Ref" : "ChiPubSubnet" },
+        "Export" : { "Name" : {"Fn::Sub": "${AWS::StackName}-Subnet1Id" }}
+  },
+      "ChiPrivSubnet": {
+        "Description": "The subnet ID to use for private web servers",
+        "Value":{ "Ref": "ChiPrivSubnet" },
+        "Export":{"Name": {"Fn::Sub": "${AWS::StackName}-Subnet2Id"}}
+      }
+    }
+}

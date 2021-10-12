@@ -1,0 +1,27 @@
+[
+  {
+  "ParameterKey": "RobVPC1cidr",
+  "ParameterValue": "10.0.0.0/16"
+},
+{
+  "ParameterKey": "RobPrivSubnetcidr",
+  "ParameterValue": "10.0.1.0/24"
+},
+{
+  "ParameterKey": "RobPrivSubnetAZ",
+  "ParameterValue": "us-east-1a"
+},
+{
+  "ParameterKey": "RobPubSubnetcidr",
+  "ParameterValue": "10.0.2.0/24"
+},
+{
+  "ParameterKey": "RobPubSubnetAZ",
+  "ParameterValue" : "us-east-1b"
+},
+{
+  "ParameterKey": "RobEC2Keypair",
+  "ParameterValue" : "Windows-Nova"
+}
+
+]

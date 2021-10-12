@@ -1,0 +1,74 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "This template creates compute resources",
+    "Metadata": {
+
+    },
+    "Parameters": {
+      "InstanceType": {
+          "Description": "selct instance type",
+          "Type": "String",
+          "Default": "t2.micro",
+          "AllowedValues": ["t2.nano", "t2.micro", "t2.medium"]
+      },
+      "ChiEC2Keypair": {
+          "Description": "select key",
+          "Type": "AWS::EC2::KeyPair::KeyName"
+      },
+      "NetworkStack": {
+          "Description": "The stack to input values from",
+          "Type": "String",
+          "Default": "ChiStack"
+      }
+
+    },
+    "Mappings": {
+      "mapAMIId": {
+                "us-east-1": {"AMI": "ami-0ab4d1e9cf9a1215a"},
+                "us-west-1": {"AMI": "ami-02f24ad9a1d24a799"}
+      }
+    },
+    "Conditions": {
+
+    },
+    "Resources": {
+      "ChiEC2": {
+          "Type": "AWS::EC2::Instance",
+          "Properties": {
+              "KeyName": { "Ref": "ChiEC2Keypair" },
+              "ImageId": {"Fn::FindInMap": ["mapAMIId",{ "Ref": "AWS::Region" },"AMI"]},
+              "InstanceType": { "Ref": "InstanceType" },
+              "Monitoring": "false",
+              "SecurityGroupIds" : [{"Fn::ImportValue" : {"Fn::Sub" : "${NetworkStack}-SecurityGroupId"}}],
+              "SubnetId" : {"Fn::ImportValue" : {"Fn::Sub" : "${NetworkStack}-Subnet1Id"}},
+              "Tags": [
+                  {
+                      "Key": "Name",
+                      "Value": {"Fn::Join" : ["/",[ "Chi", "Chibuzor", "Kola", { "Ref": "AWS::Region" } ] ]}
+                  }
+              ],
+              "UserData": {
+                  "Fn::Base64": {
+                      "Fn::Join": [
+                          "",
+                          [
+                              "#!/bin/bash -ex",
+                              "-"
+                          ]
+                      ]
+                  }
+              }
+      }
+    },
+    "s3Bucket": {
+      "Type": "AWS::CloudFormation::Stack",
+      "Properties": {
+        "TemplateURL":"https://s3.amazonaws.com/chibuzor-cloudformation-templates/S3Bucket.json"
+      }
+    }
+  },
+
+    "Outputs": {
+
+    }
+}
